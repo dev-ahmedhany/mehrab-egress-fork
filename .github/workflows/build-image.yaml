@@ -16,6 +16,13 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      # The gstreamer dev base image fills the runner's default free space.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo docker image prune -af
+          df -h /
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Go
@@ -50,5 +57,3 @@ jobs:
           build-args: |
             TEMPLATE_TAG=${{ steps.template-tag.outputs.template_tag }}
             SECURITY_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
