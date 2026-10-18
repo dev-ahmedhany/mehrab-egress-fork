@@ -1,0 +1,54 @@
+# Builds the patched egress image on GitHub's amd64 runners and pushes it to
+# ghcr.io, so the servers pull it directly. Replaces the upstream workflows,
+# which publish to livekit's Docker Hub and run livekit's test infra.
+name: Build image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: .go-version
+
+      - name: Get template image
+        id: template-tag
+        run: echo "template_tag=$(go run github.com/livekit/egress/cmd/template_version)" > "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./build/egress/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/dev-ahmedhany/mehrab-egress-fork:v1.14.1-weighted
+            ghcr.io/dev-ahmedhany/mehrab-egress-fork:sha-${{ github.sha }}
+          build-args: |
+            TEMPLATE_TAG=${{ steps.template-tag.outputs.template_tag }}
+            SECURITY_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
