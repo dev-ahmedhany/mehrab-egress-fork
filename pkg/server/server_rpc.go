@@ -215,14 +215,19 @@ func (s *Server) StartEgressAffinity(_ context.Context, req *rpc.StartEgressRequ
 		return -1
 	}
 
+	weight := s.conf.AffinityWeight
+	if weight <= 0 || weight > 1 {
+		weight = 1
+	}
+
 	if s.activeRequests.Load() == 0 {
 		// group multiple track and track composite requests.
 		// if this instance is idle and another is already handling some, the request will go to that server.
 		// this avoids having many instances with one track request each, taking availability from room composite.
-		return 0.5
+		return 0.5 * weight
 	}
 	// already handling a request and has available cpu
-	return 1
+	return weight
 }
 
 func (s *Server) ListActiveEgress(ctx context.Context, _ *rpc.ListActiveEgressRequest) (*rpc.ListActiveEgressResponse, error) {

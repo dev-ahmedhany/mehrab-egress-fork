@@ -70,6 +70,10 @@ type ServiceConfig struct {
 	PrometheusPort   int `yaml:"prometheus_port"`    // prometheus handler port
 	DebugHandlerPort int `yaml:"debug_handler_port"` // egress debug handler port
 
+	// Affinity multiplier in (0,1]. Set e.g. 0.4 on an overflow node so it only
+	// wins when every full-weight node is out of capacity.
+	AffinityWeight float32 `yaml:"affinity_weight"`
+
 	PulseSinkReapGraceSec int `yaml:"pulse_sink_reap_grace_sec"` // seconds a leaked pulse sink must stay orphaned before it is unloaded (0 = use default, negative = disable reaping)
 
 	*CPUCostConfig `yaml:"cpu_cost"` // CPU costs for the different egress types
