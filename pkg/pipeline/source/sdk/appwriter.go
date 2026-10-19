@@ -41,11 +41,16 @@ import (
 	"github.com/livekit/server-sdk-go/v2/pkg/synchronizer"
 )
 
+// mehrab: cSamplesQueueDepth is 500 (upstream 100, ~2 s of 20 ms audio). A
+// participant whose connection stalls delivers the backlog in one burst when
+// it recovers; 100 dropped that late audio from the file ("buffer full,
+// dropping sample", 16-21 samples a burst on cx53-3, 2026-10-19). A file has
+// no deadline, so keep ~10 s and write it.
 const (
 	errBufferTooSmall       = "buffer too small"
 	discontinuityTolerance  = 500 * time.Millisecond
 	pipelineCheckInterval   = 5 * time.Second
-	cSamplesQueueDepth      = 100
+	cSamplesQueueDepth      = 500
 	drainingTimeout         = time.Second * 3
 	unsubscribedGracePeriod = time.Second * 2
 
